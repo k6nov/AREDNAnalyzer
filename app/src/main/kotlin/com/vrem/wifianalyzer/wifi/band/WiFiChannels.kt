@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,61 +17,53 @@
  */
 package com.vrem.wifianalyzer.wifi.band
 
-typealias WiFiRange = Pair<Int, Int>
-typealias WiFiChannelPair = Pair<WiFiChannel, WiFiChannel>
+import com.vrem.util.EMPTY
+import com.vrem.wifianalyzer.wifi.model.WiFiWidth
 
-fun WiFiChannelPair.channelCount(): Int = second.channel - first.channel + 1 + WiFiChannels.CHANNEL_OFFSET * 2
+class WiFiChannels(
+    val channelRange: WiFiChannelPair,
+    val offset: Int,
+    val activeChannels: Map<WiFiWidth, List<Int>>,
+    val graphChannels: Map<Int, String>,
+    val availableChannels: List<Int>,
+    val excludeChannels: List<Map<String, List<Int>>> = listOf()
+) {
 
-abstract class WiFiChannels(private val wiFiRange: WiFiRange, private val wiFiChannelPairs: List<WiFiChannelPair>) {
-    fun inRange(frequency: Int): Boolean =
-            frequency in wiFiRange.first..wiFiRange.second
+    fun availableChannels(wiFiBand: WiFiBand, countryCode: String): List<WiFiChannel> =
+        WiFiChannelCountry.find(countryCode).channels(wiFiBand).map { wiFiChannelByChannel(it) }
+
+    fun availableChannels(wiFiWidth: WiFiWidth, countryCode: String): List<Int> =
+        activeChannels[wiFiWidth]
+            .orEmpty()
+            .subtract(excludeChannels.flatMap { it[countryCode] ?: emptyList() })
+            .toList()
+
+    fun inRange(frequency: Int): Boolean = frequency in channelRange.first.frequency..channelRange.second.frequency
 
     fun wiFiChannelByFrequency(frequency: Int): WiFiChannel =
-            if (inRange(frequency)) {
-                wiFiChannelPairs.find { WiFiChannel.UNKNOWN != wiFiChannel(frequency, it) }
-                        ?.let { wiFiChannel(frequency, it) }
-                        ?: WiFiChannel.UNKNOWN
-            } else {
-                WiFiChannel.UNKNOWN
-            }
+        if (inRange(frequency)) wiFiChannel(frequency) else WiFiChannel.UNKNOWN
 
     fun wiFiChannelByChannel(channel: Int): WiFiChannel =
-            wiFiChannelPairs.find { channel >= it.first.channel && channel <= it.second.channel }
-                    ?.let { WiFiChannel(channel, it.first.frequency + (channel - it.first.channel) * FREQUENCY_SPREAD) }
-                    ?: WiFiChannel.UNKNOWN
-
-    fun wiFiChannelFirst(): WiFiChannel = wiFiChannelPairs[0].first
-
-    fun wiFiChannelLast(): WiFiChannel = wiFiChannelPairs[wiFiChannelPairs.size - 1].second
-
-    fun wiFiChannel(frequency: Int, wiFiChannelPair: WiFiChannelPair): WiFiChannel {
-        val first: WiFiChannel = wiFiChannelPair.first
-        val last: WiFiChannel = wiFiChannelPair.second
-        val channel: Int = ((frequency - first.frequency).toDouble() / FREQUENCY_SPREAD + first.channel + 0.5).toInt()
-        return if (channel >= first.channel && channel <= last.channel)
-            WiFiChannel(channel, frequency)
-        else
+        if (channel in channelRange.first.channel..channelRange.second.channel) {
+            WiFiChannel(channel, channelRange.first.frequency + (channel - channelRange.first.channel) * FREQUENCY_SPREAD)
+        } else {
             WiFiChannel.UNKNOWN
+        }
+
+    fun wiFiWidthByChannel(channel: Int): WiFiWidth =
+        activeChannels.entries.firstOrNull { it.value.contains(channel) }?.key ?: WiFiWidth.MHZ_20
+
+    fun graphChannelCount(): Int = (channelRange.second.channel - channelRange.first.channel + 1) / offset
+
+    fun graphChannelByFrequency(frequency: Int): String =
+        graphChannels[wiFiChannelByFrequency(frequency).channel] ?: String.EMPTY
+
+    fun wiFiChannels(): List<WiFiChannel> =
+        (channelRange.first.channel..channelRange.second.channel).map { wiFiChannelByChannel(it) }
+
+    private fun wiFiChannel(frequency: Int): WiFiChannel {
+        val firstChannel = (channelRange.first.channel + if (channelRange.first.channel < 0) -0.5 else 0.5).toInt()
+        val channel = ((frequency - channelRange.first.frequency) / FREQUENCY_SPREAD + firstChannel).toInt()
+        return WiFiChannel(channel, frequency)
     }
-
-    abstract fun availableChannels(countryCode: String): List<WiFiChannel>
-    abstract fun channelAvailable(countryCode: String, channel: Int): Boolean
-    abstract fun wiFiChannelPairs(): List<WiFiChannelPair>
-    abstract fun wiFiChannelPairFirst(countryCode: String): WiFiChannelPair
-    abstract fun wiFiChannelByFrequency(frequency: Int, wiFiChannelPair: WiFiChannelPair): WiFiChannel
-
-    fun availableChannels(channels: Set<Int>): List<WiFiChannel> = channels.map { this.wiFiChannelByChannel(it) }
-
-    fun wiFiChannels(): List<WiFiChannel> = wiFiChannelPairs.flatMap { transform(it) }
-
-    private fun transform(wiFiChannelPair: WiFiChannelPair): List<WiFiChannel> =
-            (wiFiChannelPair.first.channel..wiFiChannelPair.second.channel).map { wiFiChannelByChannel(it) }
-
-    companion object {
-        val UNKNOWN = WiFiChannelPair(WiFiChannel.UNKNOWN, WiFiChannel.UNKNOWN)
-        internal const val FREQUENCY_SPREAD = 5
-        internal const val CHANNEL_OFFSET = 2
-        internal const val FREQUENCY_OFFSET = FREQUENCY_SPREAD * CHANNEL_OFFSET
-    }
-
 }

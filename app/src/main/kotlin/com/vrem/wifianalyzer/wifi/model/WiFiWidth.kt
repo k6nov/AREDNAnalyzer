@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,60 +18,49 @@
 package com.vrem.wifianalyzer.wifi.model
 
 import android.net.wifi.ScanResult
-import com.vrem.util.buildMinVersionM
+import androidx.annotation.StringRes
+import com.vrem.util.buildMinVersionT
+import com.vrem.wifianalyzer.R
 import kotlin.math.abs
 
+private val CHANNEL_WIDTH_320MHZ = if (buildMinVersionT()) ScanResult.CHANNEL_WIDTH_320MHZ else 5
+
 typealias ChannelWidth = Int
+typealias CalculateCenter = (primary: Int, center0: Int, center1: Int) -> Int
 
-private val channelWidth20: ChannelWidth = if (buildMinVersionM()) ScanResult.CHANNEL_WIDTH_20MHZ else 0
-private val channelWidth40: ChannelWidth = if (buildMinVersionM()) ScanResult.CHANNEL_WIDTH_40MHZ else 1
-private val channelWidth80: ChannelWidth = if (buildMinVersionM()) ScanResult.CHANNEL_WIDTH_80MHZ else 2
-private val channelWidth160: ChannelWidth = if (buildMinVersionM()) ScanResult.CHANNEL_WIDTH_160MHZ else 3
-private val channelWidth80Plus: ChannelWidth = if (buildMinVersionM()) ScanResult.CHANNEL_WIDTH_80MHZ_PLUS_MHZ else 4
-
-typealias CalculateCenter = (primary: Int, center: Int) -> Int
-
-internal val calculateCenter20: CalculateCenter = { primary, _ -> primary }
-
-internal val calculateCenter40: CalculateCenter = { primary, center ->
-    if (abs(primary - center) >= WiFiWidth.MHZ_40.frequencyWidthHalf) {
-        (primary + center) / 2
-    } else {
-        center
-    }
+internal val calculateCenter40: CalculateCenter = { primary, center0, _ ->
+    if (abs(primary - center0) >= WiFiWidth.MHZ_40.frequencyWidthHalf) (primary + center0) / 2 else center0
 }
+internal val calculateCenterUsingPrimary: CalculateCenter = { primary, _, _ -> primary }
+internal val calculateCenterUsingCenter0: CalculateCenter = { _, center0, _ -> center0 }
+internal val calculateCenterUsingCenter1: CalculateCenter = { _, _, center1 -> center1 }
 
-internal val calculateCenter80: CalculateCenter = { _, center -> center }
-
-internal val calculateCenter160: CalculateCenter = { primary, center ->
-    when (primary) {
-        // 5GHz
-        in 5170..5330 -> 5250
-        in 5490..5730 -> 5570
-        in 5735..5895 -> 5815
-        // 6GHz
-        in 5950..6100 -> 6025
-        in 6110..6260 -> 6185
-        in 6270..6420 -> 6345
-        in 6430..6580 -> 6505
-        in 6590..6740 -> 6665
-        in 6750..6900 -> 6825
-        in 6910..7120 -> 6985
-        else -> center
-    }
-}
-
-enum class WiFiWidth(val channelWidth: ChannelWidth, val frequencyWidth: Int, val guardBand: Int, val calculateCenter: CalculateCenter) {
-    MHZ_20(channelWidth20, 20, 2, calculateCenter20),
-    MHZ_40(channelWidth40, 40, 3, calculateCenter40),
-    MHZ_80(channelWidth80, 80, 3, calculateCenter80),
-    MHZ_160(channelWidth160, 160, 3, calculateCenter160),
-    MHZ_80_PLUS(channelWidth80Plus, 80, 3, calculateCenter80);
+enum class WiFiWidth(
+    @StringRes val textResource: Int,
+    val channelWidth: ChannelWidth,
+    val frequencyWidth: Int,
+    val guardBand: Int,
+    val calculateCenter: CalculateCenter,
+    val step: Int
+) {
+    MHZ_20(R.string.wifi_width_20mhz, ScanResult.CHANNEL_WIDTH_20MHZ, 20, 2, calculateCenterUsingPrimary, 4),
+    MHZ_40(R.string.wifi_width_40mhz, ScanResult.CHANNEL_WIDTH_40MHZ, 40, 3, calculateCenter40, 8),
+    MHZ_80(R.string.wifi_width_80mhz, ScanResult.CHANNEL_WIDTH_80MHZ, 80, 3, calculateCenterUsingCenter0, 16),
+    MHZ_160(R.string.wifi_width_160mhz, ScanResult.CHANNEL_WIDTH_160MHZ, 160, 3, calculateCenterUsingCenter1, 32),
+    MHZ_80_PLUS(
+        R.string.wifi_width_80mhz,
+        ScanResult.CHANNEL_WIDTH_80MHZ_PLUS_MHZ,
+        80,
+        3,
+        calculateCenterUsingCenter1,
+        16
+    ),
+    MHZ_320(R.string.wifi_width_320mhz, CHANNEL_WIDTH_320MHZ, 320, 3, calculateCenterUsingCenter1, 32);
 
     val frequencyWidthHalf: Int = frequencyWidth / 2
 
     companion object {
         fun findOne(channelWidth: ChannelWidth): WiFiWidth =
-                values().firstOrNull { it.channelWidth == channelWidth } ?: MHZ_20
+            WiFiWidth.entries.firstOrNull { it.channelWidth == channelWidth } ?: MHZ_20
     }
 }

@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,27 +19,28 @@ package com.vrem.util
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PackageInfoFlags
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.drawable.Drawable
+import android.net.wifi.ScanResult
+import android.net.wifi.WifiSsid
 import android.os.Build
 import android.util.DisplayMetrics
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
-import com.vrem.wifianalyzer.R
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.*
 import org.robolectric.annotation.Config
 import java.util.*
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
 class CompatUtilsTest {
 
     private val context: Context = mock()
@@ -48,6 +49,10 @@ class CompatUtilsTest {
     private val configuration: Configuration = mock()
     private val displayMetrics: DisplayMetrics = mock()
     private val drawable: Drawable = mock()
+    private val packageManager: PackageManager = mock()
+    private val packageInfo: PackageInfo = mock()
+    private val scanResult: ScanResult = mock()
+    private val wifiSsid: WifiSsid = mock()
 
     private lateinit var newLocale: Locale
 
@@ -64,10 +69,14 @@ class CompatUtilsTest {
         verifyNoMoreInteractions(configuration)
         verifyNoMoreInteractions(displayMetrics)
         verifyNoMoreInteractions(drawable)
+        verifyNoMoreInteractions(packageManager)
+        verifyNoMoreInteractions(packageInfo)
+        verifyNoMoreInteractions(scanResult)
+        verifyNoMoreInteractions(wifiSsid)
     }
 
     @Test
-    fun testCreateContext() {
+    fun createContext() {
         // setup
         whenever(context.resources).thenReturn(resources)
         whenever(resources.configuration).thenReturn(configuration)
@@ -76,8 +85,8 @@ class CompatUtilsTest {
         // execute
         val actual: Context = context.createContext(newLocale)
         // validate
-        assertEquals(contextWrapper, actual)
-        assertEquals(context, (actual as ContextWrapper).baseContext)
+        assertThat(actual).isEqualTo(contextWrapper)
+        assertThat((actual as ContextWrapper).baseContext).isEqualTo(context)
         verify(configuration).setLocale(newLocale)
         verify(context).createConfigurationContext(configuration)
         verify(context).resources
@@ -86,50 +95,99 @@ class CompatUtilsTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.M])
-    @Suppress("DEPRECATION")
-    fun testCreateContextLegacy() {
+    fun contextPackageInfo() {
         // setup
-        whenever(context.resources).thenReturn(resources)
-        whenever(resources.configuration).thenReturn(configuration)
-        whenever(resources.displayMetrics).thenReturn(displayMetrics)
+        val packageName = "Package Name"
+        whenever(context.packageManager).thenReturn(packageManager)
+        whenever(context.packageName).thenReturn(packageName)
+        whenever(packageManager.getPackageInfo(eq(packageName), any<PackageInfoFlags>())).thenReturn(packageInfo)
         // execute
-        val actual: Context = context.createContext(newLocale)
+        val actual = context.packageInfo()
         // validate
-        assertEquals(context, actual)
-        assertEquals(newLocale, configuration.locale)
-        verify(resources).displayMetrics
-        verify(resources).updateConfiguration(configuration, displayMetrics)
-        verify(context).resources
-        verify(resources).configuration
+        assertThat(actual).isEqualTo(packageInfo)
+        verify(packageManager).getPackageInfo(eq(packageName), any<PackageInfoFlags>())
+        verify(context).packageName
+        verify(context).packageManager
     }
 
     @Test
-    fun testContextCompatColor() {
+    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    fun contextPackageInfoLegacy() {
         // setup
-        val expected = 200
-        whenever(context.getColor(R.color.regular)).thenReturn(expected)
+        val packageName = "Package Name"
+        whenever(context.packageManager).thenReturn(packageManager)
+        whenever(context.packageName).thenReturn(packageName)
+        whenever(packageManager.getPackageInfo(packageName, 0)).thenReturn(packageInfo)
         // execute
-        val actual = context.compatColor(R.color.regular)
+        val actual = context.packageInfo()
         // validate
-        assertEquals(expected, actual)
-        verify(context).getColor(R.color.regular)
+        assertThat(actual).isEqualTo(packageInfo)
+        verify(packageManager).getPackageInfo(packageName, 0)
+        verify(context).packageName
+        verify(context).packageManager
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
-    @Suppress("DEPRECATION")
-    fun testContextCompatColorLegacy() {
+    fun scanResultSSID() {
         // setup
-        val expected = 300
-        whenever(context.resources).thenReturn(resources)
-        whenever(resources.getColor(R.color.regular)).thenReturn(expected)
+        val expected = "SSID"
+        val ssid = "\"$expected\""
+        whenever(scanResult.wifiSsid).thenReturn(wifiSsid)
+        whenever(wifiSsid.toString()).thenReturn(ssid)
         // execute
-        val actual = context.compatColor(R.color.regular)
+        val actual = scanResult.ssid()
         // validate
-        assertEquals(expected, actual)
-        verify(context).resources
-        verify(resources).getColor(R.color.regular)
+        assertThat(actual).isEqualTo(expected)
+        verify(scanResult).wifiSsid
+    }
+
+    @Test
+    fun scanResultSSIDWhenWifiSsidNull() {
+        // setup
+        whenever(scanResult.wifiSsid).thenReturn(null)
+        // execute
+        val actual = scanResult.ssid()
+        // validate
+        assertThat(actual).isEqualTo(String.EMPTY)
+        verify(scanResult).wifiSsid
+    }
+
+    @Test
+    fun scanResultSSIDWhenNull() {
+        // setup
+        whenever(scanResult.wifiSsid).thenReturn(wifiSsid)
+        whenever(wifiSsid.toString()).thenReturn(null)
+        // execute
+        val actual = scanResult.ssid()
+        // validate
+        assertThat(actual).isEqualTo(String.EMPTY)
+        verify(scanResult).wifiSsid
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    @Suppress("DEPRECATION")
+    fun scanResultSSIDLegacy() {
+        // setup
+        val expected = "SSID"
+        val ssid = "\"$expected\""
+        scanResult.SSID = ssid
+        // execute
+        val actual = scanResult.ssid()
+        // validate
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    @Suppress("DEPRECATION")
+    fun scanResultSSIDLegacyWhenNull() {
+        // setup
+        scanResult.SSID = null
+        // execute
+        val actual = scanResult.ssid()
+        // validate
+        assertThat(actual).isEqualTo(String.EMPTY)
     }
 
 }

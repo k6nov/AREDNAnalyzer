@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ class ChannelRatingFragment : Fragment(), OnRefreshListener {
     lateinit var channelRatingAdapter: ChannelRatingAdapter
         private set
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val binding: ChannelRatingContentBinding = ChannelRatingContentBinding.inflate(inflater, container, false)
         swipeRefreshLayout = binding.channelRatingRefresh
         swipeRefreshLayout.setOnRefreshListener(this)

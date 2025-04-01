@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,16 +17,17 @@
  */
 package com.vrem.wifianalyzer.wifi.band
 
+private const val ALLOWED_RANGE = FREQUENCY_SPREAD / 2
+
 data class WiFiChannel(val channel: Int = 0, val frequency: Int = 0) : Comparable<WiFiChannel> {
     fun inRange(value: Int): Boolean =
-            value in frequency - ALLOWED_RANGE..frequency + ALLOWED_RANGE
+        value in frequency - ALLOWED_RANGE..frequency + ALLOWED_RANGE
 
     override fun compareTo(other: WiFiChannel): Int =
-            compareBy<WiFiChannel> { it.channel }.thenBy { it.frequency }.compare(this, other)
+        compareBy<WiFiChannel> { it.channel }.thenBy { it.frequency }.compare(this, other)
 
     companion object {
         val UNKNOWN = WiFiChannel()
-        private const val ALLOWED_RANGE = WiFiChannels.FREQUENCY_SPREAD / 2
     }
 
 }

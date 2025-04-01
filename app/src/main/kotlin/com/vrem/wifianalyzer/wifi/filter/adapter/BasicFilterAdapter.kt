@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@ import com.vrem.annotation.OpenClass
 import com.vrem.wifianalyzer.settings.Settings
 
 @OpenClass
-abstract class BasicFilterAdapter<T>(open var selections: Set<T>) {
-    fun selections(selections: Array<T>) {
-        this.selections = selections.toSet()
+abstract class BasicFilterAdapter<T>(var selections: Set<T>) {
+    fun selections(selections: Set<T>) {
+        this.selections = selections
     }
 
     abstract fun isActive(): Boolean

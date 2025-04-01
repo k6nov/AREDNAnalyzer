@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ import com.vrem.wifianalyzer.databinding.GraphContentBinding
 import com.vrem.wifianalyzer.wifi.band.WiFiBand
 import com.vrem.wifianalyzer.wifi.graphutils.GraphAdapter
 
-private fun timeGraphViews(): List<TimeGraphView> = WiFiBand.values().map { TimeGraphView(it) }
+private fun timeGraphViews(): List<TimeGraphView> = WiFiBand.entries.map { TimeGraphView(it) }
 
 class TimeGraphAdapter : GraphAdapter(timeGraphViews())
 
@@ -39,7 +39,7 @@ class TimeGraphFragment : Fragment(), OnRefreshListener {
     lateinit var timeGraphAdapter: TimeGraphAdapter
         private set
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val binding = GraphContentBinding.inflate(inflater, container, false)
         swipeRefreshLayout = binding.graphRefresh
         swipeRefreshLayout.setOnRefreshListener(this)

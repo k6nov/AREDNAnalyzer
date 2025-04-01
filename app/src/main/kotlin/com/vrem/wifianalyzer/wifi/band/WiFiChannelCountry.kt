@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,32 +19,26 @@ package com.vrem.wifianalyzer.wifi.band
 
 import com.vrem.util.allCountries
 import com.vrem.util.findByCountryCode
-import java.util.*
+import com.vrem.util.toCapitalize
+import java.util.Locale
 
-class WiFiChannelCountry(private val country: Locale) {
+class WiFiChannelCountry(val locale: Locale) {
     private val unknown = "-Unknown"
-    private val wiFiChannelGHZ2 = WiFiChannelCountryGHZ2()
-    private val wiFiChannelGHZ5 = WiFiChannelCountryGHZ5()
-    private val wiFiChannelGHZ6 = WiFiChannelCountryGHZ6()
 
-    fun countryCode(): String = country.country
+    val countryCode: String
+        get() = locale.country.toCapitalize(locale)
 
     fun countryName(currentLocale: Locale): String {
-        val countryName: String = country.getDisplayCountry(currentLocale)
-        return if (country.country == countryName) countryName + unknown else countryName
+        val countryName: String = locale.getDisplayCountry(currentLocale)
+        return if (locale.country == countryName) countryName + unknown else countryName
     }
 
-    fun channelsGHZ2(): SortedSet<Int> = wiFiChannelGHZ2.findChannels(country.country)
-
-    fun channelsGHZ5(): SortedSet<Int> = wiFiChannelGHZ5.findChannels(country.country)
-
-    fun channelsGHZ6(): SortedSet<Int> = wiFiChannelGHZ6.findChannels(country.country)
-
-    fun channelAvailableGHZ2(channel: Int): Boolean = channelsGHZ2().contains(channel)
-
-    fun channelAvailableGHZ5(channel: Int): Boolean = channelsGHZ5().contains(channel)
-
-    fun channelAvailableGHZ6(channel: Int): Boolean = channelsGHZ6().contains(channel)
+    fun channels(wiFiBand: WiFiBand): List<Int> {
+        val wiFiChannels = wiFiBand.wiFiChannels
+        return wiFiChannels.availableChannels
+            .subtract(wiFiChannels.excludeChannels.flatMap { it[countryCode] ?: emptyList() })
+            .toList()
+    }
 
     companion object {
         fun find(countryCode: String): WiFiChannelCountry = WiFiChannelCountry(findByCountryCode(countryCode))

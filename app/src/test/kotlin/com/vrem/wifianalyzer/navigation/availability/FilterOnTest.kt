@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,12 +21,8 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.Menu
 import android.view.MenuItem
+import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
-import com.vrem.util.compatColor
 import com.vrem.wifianalyzer.MainActivity
 import com.vrem.wifianalyzer.MainContextHelper.INSTANCE
 import com.vrem.wifianalyzer.R
@@ -34,10 +30,14 @@ import com.vrem.wifianalyzer.navigation.options.OptionMenu
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
 class FilterOnTest {
     private val mainActivity: MainActivity = mock()
     private val optionMenu: OptionMenu = mock()
@@ -58,37 +58,37 @@ class FilterOnTest {
     }
 
     @Test
-    fun testNavigationOptionFilterOnWithFilterInactive() {
+    fun navigationOptionFilterOnWithFilterInactive() {
         // setup
         val colorResult = 200
         whenever(filterAdapter.isActive()).thenReturn(false)
-        whenever(mainActivity.compatColor(R.color.regular)).thenReturn(colorResult)
+        whenever(ContextCompat.getColor(mainActivity, R.color.regular)).thenReturn(colorResult)
         withMenuItem()
         // execute
         navigationOptionFilterOn(mainActivity)
         // validate
         verifyMenuItem()
-        verify(mainActivity).compatColor(R.color.regular)
+        ContextCompat.getColor(verify(mainActivity), R.color.regular)
         verify(drawable).setTint(colorResult)
     }
 
     @Test
-    fun testNavigationOptionFilterOnWithFilterActive() {
+    fun navigationOptionFilterOnWithFilterActive() {
         // setup
         val colorResult = 100
         whenever(filterAdapter.isActive()).thenReturn(true)
-        whenever(mainActivity.compatColor(R.color.selected)).thenReturn(colorResult)
+        whenever(ContextCompat.getColor(mainActivity, R.color.selected)).thenReturn(colorResult)
         withMenuItem()
         // execute
         navigationOptionFilterOn(mainActivity)
         // validate
         verifyMenuItem()
-        verify(mainActivity).compatColor(R.color.selected)
+        ContextCompat.getColor(verify(mainActivity), R.color.selected)
         verify(drawable).setTint(colorResult)
     }
 
     @Test
-    fun testNavigationOptionFilterOnWithNoMenuDoesNotSetVisibleTrue() {
+    fun navigationOptionFilterOnWithNoMenuDoesNotSetVisibleTrue() {
         // setup
         whenever(mainActivity.optionMenu).thenReturn(optionMenu)
         whenever(optionMenu.menu).thenReturn(null)

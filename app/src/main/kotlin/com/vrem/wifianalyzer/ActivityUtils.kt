@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  */
 package com.vrem.wifianalyzer
 
-import android.annotation.TargetApi
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import android.view.WindowManager
+import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.Toolbar
 
 internal fun MainActivity.keepScreenOn() =
@@ -43,7 +43,7 @@ internal fun MainActivity.setupToolbar(): Toolbar {
 
 internal fun makeIntent(action: String): Intent = Intent(action)
 
-@TargetApi(Build.VERSION_CODES.Q)
+@RequiresApi(Build.VERSION_CODES.Q)
 internal fun MainActivity.startWiFiSettings() =
     this.startActivity(makeIntent(Settings.Panel.ACTION_WIFI))
 

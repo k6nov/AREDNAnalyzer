@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,34 +20,38 @@ package com.vrem.wifianalyzer.wifi.channelrating
 import android.view.View
 import android.widget.RatingBar
 import android.widget.TextView
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import com.vrem.wifianalyzer.R
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class ChannelRatingAdapterBindingTest {
 
     @Test
-    fun testChannelRatingAdapterBinding() {
+    fun channelRatingAdapterBinding() {
         // setup
         val view: View = mock()
-        val channelNumber: TextView = mock()
-        val accessPointCount: TextView = mock()
+        val channelRatingChannel: TextView = mock()
+        val channelRatingAPCount: TextView = mock()
+        val channelRatingWidth: TextView = mock()
         val channelRating: RatingBar = mock()
-        whenever(view.findViewById<TextView>(R.id.channelNumber)).thenReturn(channelNumber)
-        whenever(view.findViewById<TextView>(R.id.accessPointCount)).thenReturn(accessPointCount)
+        whenever(view.findViewById<TextView>(R.id.channelRatingChannel)).thenReturn(channelRatingChannel)
+        whenever(view.findViewById<TextView>(R.id.channelRatingWidth)).thenReturn(channelRatingWidth)
+        whenever(view.findViewById<TextView>(R.id.channelRatingAPCount)).thenReturn(channelRatingAPCount)
         whenever(view.findViewById<RatingBar>(R.id.channelRating)).thenReturn(channelRating)
         // execute
         val fixture = ChannelRatingAdapterBinding(view)
         // validate
-        assertEquals(view, fixture.root)
-        assertEquals(channelNumber, fixture.channelNumber)
-        assertEquals(accessPointCount, fixture.accessPointCount)
-        assertEquals(channelRating, fixture.channelRating)
-        verify(view).findViewById<View>(R.id.channelNumber)
-        verify(view).findViewById<View>(R.id.accessPointCount)
+        assertThat(fixture.root).isEqualTo(view)
+        assertThat(fixture.channelRatingChannel).isEqualTo(channelRatingChannel)
+        assertThat(fixture.channelRatingWidth).isEqualTo(channelRatingWidth)
+        assertThat(fixture.channelRatingAPCount).isEqualTo(channelRatingAPCount)
+        assertThat(fixture.channelRating).isEqualTo(channelRating)
+        verify(view).findViewById<View>(R.id.channelRatingChannel)
+        verify(view).findViewById<View>(R.id.channelRatingWidth)
+        verify(view).findViewById<View>(R.id.channelRatingAPCount)
         verify(view).findViewById<View>(R.id.channelRating)
     }
 

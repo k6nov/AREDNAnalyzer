@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,9 @@ package com.vrem.wifianalyzer.wifi.graphutils
 
 import com.jjoe64.graphview.series.LineGraphSeries
 import com.jjoe64.graphview.series.TitleLineGraphSeries
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import org.junit.After
 import org.junit.Test
+import org.mockito.kotlin.*
 
 class SeriesOptionsTest {
     private val graphColors: GraphColors = mock()
@@ -41,7 +38,7 @@ class SeriesOptionsTest {
     }
 
     @Test
-    fun testRemoveSeries() {
+    fun removeSeries() {
         // setup
         val color = 10
         whenever(lineGraphSeries.color).thenReturn(color)
@@ -53,41 +50,47 @@ class SeriesOptionsTest {
     }
 
     @Test
-    fun testHighlightConnectedLineGraphSeriesSetsConnectedThickness() {
+    fun highlightConnectedLineGraphSeriesSetsConnectedThickness() {
         // execute
         fixture.highlightConnected(lineGraphSeries, true)
         // validate
         verify(lineGraphSeries).thickness = THICKNESS_CONNECTED
+        verify(titleLineGraphSeries, never()).thickness
+        verify(titleLineGraphSeries, never()).setTextBold(any())
     }
 
     @Test
-    fun testHighlightConnectedLineGraphSeriesSetsNotConnectedThickness() {
+    fun highlightConnectedLineGraphSeriesSetsNotConnectedThickness() {
         // execute
         fixture.highlightConnected(lineGraphSeries, false)
         // validate
         verify(lineGraphSeries).thickness = THICKNESS_REGULAR
+        verify(titleLineGraphSeries, never()).thickness
+        verify(titleLineGraphSeries, never()).setTextBold(any())
     }
 
     @Test
-    fun testHighlightConnectedTitleLineGraphSeriesSetsConnectedThickness() {
+    fun highlightConnectedTitleLineGraphSeriesSetsConnectedThickness() {
         // execute
         fixture.highlightConnected(titleLineGraphSeries, true)
         // validate
         verify(titleLineGraphSeries).thickness = THICKNESS_CONNECTED
         verify(titleLineGraphSeries).setTextBold(true)
+        verify(lineGraphSeries, never()).thickness
     }
 
     @Test
-    fun testHighlightConnectedTitleLineGraphSeriesSetsNotConnectedThickness() {
+    fun highlightConnectedTitleLineGraphSeriesSetsNotConnectedThickness() {
         // execute
         fixture.highlightConnected(titleLineGraphSeries, false)
         // validate
         verify(titleLineGraphSeries).thickness = THICKNESS_REGULAR
         verify(titleLineGraphSeries).setTextBold(false)
+        verify(lineGraphSeries, never()).thickness
     }
 
     @Test
-    fun testSetSeriesColorForLineGraphSeries() {
+    fun setSeriesColorForLineGraphSeries() {
         // setup
         whenever(graphColors.graphColor()).thenReturn(graphColor)
         // execute
@@ -96,10 +99,12 @@ class SeriesOptionsTest {
         verify(graphColors).graphColor()
         verify(lineGraphSeries).color = graphColor.primary.toInt()
         verify(lineGraphSeries).backgroundColor = graphColor.background.toInt()
+        verify(titleLineGraphSeries, never()).color
+        verify(titleLineGraphSeries, never()).backgroundColor
     }
 
     @Test
-    fun testSetSeriesColorForTitleLineGraphSeries() {
+    fun setSeriesColorForTitleLineGraphSeries() {
         // setup
         whenever(graphColors.graphColor()).thenReturn(graphColor)
         // execute
@@ -108,13 +113,24 @@ class SeriesOptionsTest {
         verify(graphColors).graphColor()
         verify(titleLineGraphSeries).color = graphColor.primary.toInt()
         verify(titleLineGraphSeries).backgroundColor = graphColor.background.toInt()
+        verify(lineGraphSeries, never()).color
+        verify(lineGraphSeries, never()).backgroundColor
     }
 
     @Test
-    fun testDrawBackgroundForLineGraphSeries() {
+    fun drawBackgroundForLineGraphSeries() {
         // execute
         fixture.drawBackground(lineGraphSeries, true)
         // validate
         verify(lineGraphSeries).isDrawBackground = true
     }
+
+    @Test
+    fun drawBackgroundForTitleLineGraphSeries() {
+        // execute
+        fixture.drawBackground(titleLineGraphSeries, true)
+        // validate
+        verify(titleLineGraphSeries).isDrawBackground = true
+    }
+
 }

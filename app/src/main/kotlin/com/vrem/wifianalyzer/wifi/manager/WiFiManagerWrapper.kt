@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 package com.vrem.wifianalyzer.wifi.manager
 
+import android.annotation.SuppressLint
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
@@ -57,6 +58,7 @@ class WiFiManagerWrapper(
             false
         }
 
+    @SuppressLint("MissingPermission")
     fun scanResults(): List<ScanResult> =
         try {
             wifiManager.scanResults ?: listOf()
@@ -64,6 +66,7 @@ class WiFiManagerWrapper(
             listOf()
         }
 
+    @Suppress("DEPRECATION")
     fun wiFiInfo(): WifiInfo? =
         try {
             wifiManager.connectionInfo
@@ -78,6 +81,13 @@ class WiFiManagerWrapper(
     fun is6GHzBandSupported(): Boolean =
         if (minVersionR()) {
             wifiManager.is6GHzBandSupported
+        } else {
+            false
+        }
+
+    fun isScanThrottleEnabled(): Boolean =
+        if (minVersionR()) {
+            wifiManager.isScanThrottleEnabled
         } else {
             false
         }

@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.rule.GrantPermissionRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,24 +33,26 @@ class MainInstrumentedTest {
     @get:Rule
     val activityTestRule: ActivityScenarioRule<MainActivity> = activityScenarioRule()
 
+    @get:Rule
+    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        android.Manifest.permission.ACCESS_COARSE_LOCATION,
+        android.Manifest.permission.ACCESS_FINE_LOCATION,
+        android.Manifest.permission.ACCESS_WIFI_STATE,
+        android.Manifest.permission.CHANGE_WIFI_STATE
+    )
+
     @Test
-    fun testNavigation() {
-        pauseShort()
+    fun navigation() {
         NavigationInstrumentedTest().run()
-        pauseShort()
     }
 
     @Test
-    fun testScanner() {
-        pauseShort()
+    fun scanner() {
         ScannerInstrumentedTest().run()
-        pauseShort()
     }
 
     @Test
-    fun testFilter() {
-        pauseShort()
+    fun filter() {
         FilterInstrumentedTest().run()
-        pauseShort()
     }
 }

@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,16 +21,12 @@ import android.os.Build
 import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jjoe64.graphview.GraphView
-import com.nhaarman.mockitokotlin2.*
-import com.vrem.wifianalyzer.Configuration
 import com.vrem.wifianalyzer.MainContext
 import com.vrem.wifianalyzer.MainContextHelper
 import com.vrem.wifianalyzer.RobolectricUtil
 import com.vrem.wifianalyzer.settings.Settings
 import com.vrem.wifianalyzer.settings.ThemeStyle
 import com.vrem.wifianalyzer.wifi.band.WiFiBand
-import com.vrem.wifianalyzer.wifi.band.WiFiChannel
-import com.vrem.wifianalyzer.wifi.band.WiFiChannelPair
 import com.vrem.wifianalyzer.wifi.graphutils.GraphLegend
 import com.vrem.wifianalyzer.wifi.graphutils.GraphViewWrapper
 import com.vrem.wifianalyzer.wifi.graphutils.MAX_Y
@@ -40,21 +36,20 @@ import com.vrem.wifianalyzer.wifi.model.WiFiData
 import com.vrem.wifianalyzer.wifi.model.WiFiDetail
 import com.vrem.wifianalyzer.wifi.predicate.Predicate
 import com.vrem.wifianalyzer.wifi.predicate.truePredicate
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.*
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
 class ChannelGraphViewTest {
-    private val wiFiChannelPair: WiFiChannelPair = WiFiChannelPair(WiFiChannel.UNKNOWN, WiFiChannel.UNKNOWN)
     private val settings: Settings = MainContextHelper.INSTANCE.settings
-    private val configuration: Configuration = MainContextHelper.INSTANCE.configuration
     private val graphViewWrapper: GraphViewWrapper = mock()
     private val dataManager: DataManager = mock()
-    private val fixture: ChannelGraphView = spy(ChannelGraphView(WiFiBand.GHZ2, wiFiChannelPair, dataManager, graphViewWrapper))
+    private val fixture: ChannelGraphView = spy(ChannelGraphView(WiFiBand.GHZ2, dataManager, graphViewWrapper))
 
     @After
     fun tearDown() {
@@ -64,7 +59,7 @@ class ChannelGraphViewTest {
     }
 
     @Test
-    fun testUpdate() {
+    fun update() {
         // setup
         val newSeries: Set<WiFiDetail> = setOf()
         val wiFiDetails: List<WiFiDetail> = listOf()
@@ -72,7 +67,7 @@ class ChannelGraphViewTest {
         val predicate: Predicate = truePredicate
         doReturn(predicate).whenever(fixture).predicate(settings)
         doReturn(true).whenever(fixture).selected()
-        whenever(dataManager.newSeries(wiFiDetails, wiFiChannelPair)).thenReturn(newSeries)
+        whenever(dataManager.newSeries(wiFiDetails)).thenReturn(newSeries)
         whenever(settings.channelGraphLegend()).thenReturn(GraphLegend.RIGHT)
         whenever(settings.graphMaximumY()).thenReturn(MAX_Y)
         whenever(settings.themeStyle()).thenReturn(ThemeStyle.DARK)
@@ -82,7 +77,7 @@ class ChannelGraphViewTest {
         // validate
         verify(fixture).selected()
         verify(fixture).predicate(settings)
-        verify(dataManager).newSeries(wiFiDetails, wiFiChannelPair)
+        verify(dataManager).newSeries(wiFiDetails)
         verify(dataManager).addSeriesData(graphViewWrapper, newSeries, MAX_Y)
         verify(graphViewWrapper).removeSeries(newSeries)
         verify(graphViewWrapper).updateLegend(GraphLegend.RIGHT)
@@ -94,110 +89,40 @@ class ChannelGraphViewTest {
     }
 
     @Test
-    fun testGraphView() {
+    fun graphView() {
         // setup
         val expected: GraphView = mock()
         whenever(graphViewWrapper.graphView).thenReturn(expected)
         // execute
         val actual = fixture.graphView()
         // validate
-        assertEquals(expected, actual)
+        assertThat(actual).isEqualTo(expected)
         verify(graphViewWrapper).graphView
     }
 
     @Test
-    fun testWiFiChannelPairNumX() {
-        // setup
-        val expected = 15
-        val wiFiChannelPair: WiFiChannelPair = withWiFiChannelPair()
-        // execute
-        val actual = wiFiChannelPair.numX()
-        // validate
-        assertEquals(expected, actual)
-    }
-
-    @Test
-    fun testWiFiChannelPairSelected() {
-        // setup
-        val fixture = withWiFiChannelPair()
-        whenever(settings.wiFiBand()).thenReturn(WiFiBand.GHZ2)
-        whenever(configuration.wiFiChannelPair(WiFiBand.GHZ2)).thenReturn(fixture)
-        // execute
-        val actual = fixture.selected(WiFiBand.GHZ2)
-        // validate
-        assertTrue(actual)
-        verify(settings).wiFiBand()
-        verify(configuration).wiFiChannelPair(WiFiBand.GHZ2)
-    }
-
-    @Test
-    fun testWiFiChannelPairSelectedWithCurrentWiFiBandGHZ5() {
-        // setup
-        val fixture = withWiFiChannelPair()
-        whenever(settings.wiFiBand()).thenReturn(WiFiBand.GHZ5)
-        whenever(configuration.wiFiChannelPair(WiFiBand.GHZ5)).thenReturn(fixture)
-        // execute
-        val actual = fixture.selected(WiFiBand.GHZ2)
-        // validate
-        assertFalse(actual)
-        verify(settings).wiFiBand()
-        verify(configuration).wiFiChannelPair(WiFiBand.GHZ5)
-    }
-
-    @Test
-    fun testWiFiChannelPairSelectedWithGHZ5() {
-        // setup
-        val fixture = withWiFiChannelPair()
-        whenever(settings.wiFiBand()).thenReturn(WiFiBand.GHZ2)
-        whenever(configuration.wiFiChannelPair(WiFiBand.GHZ2)).thenReturn(fixture)
-        // execute
-        val actual = fixture.selected(WiFiBand.GHZ5)
-        // validate
-        assertFalse(actual)
-        verify(settings).wiFiBand()
-        verify(configuration).wiFiChannelPair(WiFiBand.GHZ2)
-    }
-
-    @Test
-    fun testWiFiChannelPairSelectedWithCurrentGHZ5() {
-        // setup
-        val fixture = withWiFiChannelPair()
-        val wiFiChannelPair = withWiFiChannelPair(30)
-        whenever(settings.wiFiBand()).thenReturn(WiFiBand.GHZ5)
-        whenever(configuration.wiFiChannelPair(WiFiBand.GHZ5)).thenReturn(wiFiChannelPair)
-        // execute
-        val actual = fixture.selected(WiFiBand.GHZ5)
-        // validate
-        assertFalse(actual)
-        verify(settings).wiFiBand()
-        verify(configuration).wiFiChannelPair(WiFiBand.GHZ5)
-    }
-
-    @Test
-    fun testMakeGraphView() {
+    fun makeGraphView() {
         // setup
         RobolectricUtil.INSTANCE.activity
-        val wiFiChannelPair = withWiFiChannelPair()
         // execute
-        val actual = makeGraphView(MainContext.INSTANCE, 10, ThemeStyle.DARK, WiFiBand.GHZ2, wiFiChannelPair)
+        val actual = makeGraphView(MainContext.INSTANCE, 10, ThemeStyle.DARK, WiFiBand.GHZ2)
         // validate
-        assertNotNull(actual)
+        assertThat(actual).isNotNull()
     }
 
     @Test
-    fun testMakeGraphViewWrapper() {
+    fun makeGraphViewWrapper() {
         // setup
         MainContextHelper.INSTANCE.restore()
         RobolectricUtil.INSTANCE.activity
-        val wiFiChannelPair = withWiFiChannelPair()
         // execute
-        val actual = makeGraphViewWrapper(WiFiBand.GHZ2, wiFiChannelPair)
+        val actual = makeGraphViewWrapper(WiFiBand.GHZ2)
         // validate
-        assertNotNull(actual)
+        assertThat(actual).isNotNull()
     }
 
     @Test
-    fun testMakeDefaultSeries() {
+    fun makeDefaultSeries() {
         // setup
         val frequencyEnd = 10
         val minX = 20
@@ -205,10 +130,7 @@ class ChannelGraphViewTest {
         // execute
         val actual = makeDefaultSeries(frequencyEnd, minX)
         // validate
-        assertNotNull(actual)
+        assertThat(actual).isNotNull()
     }
-
-    private fun withWiFiChannelPair(channel: Int = 10): WiFiChannelPair =
-            WiFiChannelPair(WiFiChannel(channel, 100), WiFiChannel(20, 200))
 
 }

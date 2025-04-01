@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,60 +19,47 @@ package com.vrem.wifianalyzer.wifi.channelgraph
 
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.vrem.wifianalyzer.MainContextHelper
 import com.vrem.wifianalyzer.RobolectricUtil
 import com.vrem.wifianalyzer.wifi.band.WiFiBand
 import com.vrem.wifianalyzer.wifi.model.WiFiConnection
 import com.vrem.wifianalyzer.wifi.model.WiFiData
-import org.junit.After
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
 class ChannelGraphAdapterTest {
+    @Suppress("unused")
     private val mainActivity = RobolectricUtil.INSTANCE.activity
-    private val channelGraphNavigation: ChannelGraphNavigation = mock()
-    private val fixture = ChannelGraphAdapter(channelGraphNavigation)
-
-    @After
-    fun tearDown() {
-        verifyNoMoreInteractions(channelGraphNavigation)
-        MainContextHelper.INSTANCE.restore()
-    }
+    private val fixture = ChannelGraphAdapter()
 
     @Test
-    fun testGetGraphViewNotifiers() {
+    fun getGraphViewNotifiers() {
         // setup
-        val expected = WiFiBand.values().map { it.wiFiChannels.wiFiChannelPairs().size }.sum()
+        val expected = WiFiBand.entries.size
         // execute
         val graphViewNotifiers = fixture.graphViewNotifiers()
         // validate
-        assertEquals(expected, graphViewNotifiers.size)
+        assertThat(graphViewNotifiers).hasSize(expected)
     }
 
     @Test
-    fun testGetGraphViews() {
+    fun getGraphViews() {
         // setup
-        val expected = WiFiBand.values().map { it.wiFiChannels.wiFiChannelPairs().size }.sum()
+        val expected = WiFiBand.entries.size
         // execute
         val graphViews = fixture.graphViews()
         // validate
-        assertEquals(expected, graphViews.size)
+        assertThat(graphViews).hasSize(expected)
     }
 
     @Test
-    fun testUpdate() {
+    fun update() {
         // setup
         val wiFiData = WiFiData(listOf(), WiFiConnection.EMPTY)
         // execute
         fixture.update(wiFiData)
-        // validate
-        verify(channelGraphNavigation).update()
     }
 }

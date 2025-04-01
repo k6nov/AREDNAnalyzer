@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,19 +44,18 @@ internal fun Viewport.initialize(maximumY: Int): Viewport {
 }
 
 internal fun GridLabelRenderer.colors(themeStyle: ThemeStyle): GridLabelRenderer {
-    val color = if (ThemeStyle.DARK == themeStyle) Color.WHITE else Color.BLACK
     this.gridColor = Color.GRAY
-    this.verticalLabelsColor = color
-    this.verticalAxisTitleColor = color
-    this.horizontalLabelsColor = color
-    this.horizontalAxisTitleColor = color
+    this.verticalLabelsColor = themeStyle.colorGraphText
+    this.verticalAxisTitleColor = themeStyle.colorGraphText
+    this.horizontalLabelsColor = themeStyle.colorGraphText
+    this.horizontalAxisTitleColor = themeStyle.colorGraphText
     return this
 }
 
 internal fun GridLabelRenderer.horizontalTitle(title: String): GridLabelRenderer {
     if (title.isNotEmpty()) {
         this.horizontalAxisTitle = title
-        this.horizontalAxisTitleTextSize = this.horizontalAxisTitleTextSize * AXIS_TEXT_SIZE_ADJUSTMENT
+        this.horizontalAxisTitleTextSize *= AXIS_TEXT_SIZE_ADJUSTMENT
     }
     return this
 }
@@ -64,7 +63,7 @@ internal fun GridLabelRenderer.horizontalTitle(title: String): GridLabelRenderer
 internal fun GridLabelRenderer.verticalTitle(title: String): GridLabelRenderer {
     if (title.isNotEmpty()) {
         this.verticalAxisTitle = title
-        this.verticalAxisTitleTextSize = this.verticalAxisTitleTextSize * AXIS_TEXT_SIZE_ADJUSTMENT
+        this.verticalAxisTitleTextSize *= AXIS_TEXT_SIZE_ADJUSTMENT
     }
     return this
 }
@@ -76,22 +75,28 @@ internal fun GridLabelRenderer.labelFormat(labelFormatter: LabelFormatter?): Gri
     return this
 }
 
-internal fun GridLabelRenderer.labels(numHorizontalLabels: Int, numVerticalLabels: Int, horizontalLabelsVisible: Boolean): GridLabelRenderer {
+internal fun GridLabelRenderer.labels(
+    numHorizontalLabels: Int,
+    numVerticalLabels: Int,
+    horizontalLabelsVisible: Boolean
+): GridLabelRenderer {
     this.setHumanRounding(false)
     this.isHighlightZeroLines = false
     this.numVerticalLabels = numVerticalLabels
     this.numHorizontalLabels = numHorizontalLabels
     this.isVerticalLabelsVisible = true
     this.isHorizontalLabelsVisible = horizontalLabelsVisible
-    this.textSize = this.textSize * TEXT_SIZE_ADJUSTMENT
+    this.textSize *= TEXT_SIZE_ADJUSTMENT
     this.reloadStyles()
     return this
 }
 
-class GraphViewBuilder(private val numHorizontalLabels: Int,
-                       private val maximumY: Int,
-                       private val themeStyle: ThemeStyle,
-                       private val horizontalLabelsVisible: Boolean = true) {
+class GraphViewBuilder(
+    private val numHorizontalLabels: Int,
+    private val maximumY: Int,
+    private val themeStyle: ThemeStyle,
+    private val horizontalLabelsVisible: Boolean = true
+) {
     private var labelFormatter: LabelFormatter? = null
     private var verticalTitle: String = String.EMPTY
     private var horizontalTitle: String = String.EMPTY
@@ -112,10 +117,10 @@ class GraphViewBuilder(private val numHorizontalLabels: Int,
     }
 
     fun build(context: Context): GraphView =
-            GraphView(context)
-                    .layout(layoutParams)
-                    .gridLabelInitialize()
-                    .viewportInitialize()
+        GraphView(context)
+            .layout(layoutParams)
+            .gridLabelInitialize()
+            .viewportInitialize()
 
     private fun GraphView.viewportInitialize(): GraphView {
         this.viewport.initialize(maximumY)
@@ -124,11 +129,11 @@ class GraphViewBuilder(private val numHorizontalLabels: Int,
 
     private fun GraphView.gridLabelInitialize(): GraphView {
         this.gridLabelRenderer
-                .labels(numHorizontalLabels, numVerticalLabels, horizontalLabelsVisible)
-                .labelFormat(labelFormatter)
-                .horizontalTitle(horizontalTitle)
-                .verticalTitle(verticalTitle)
-                .colors(themeStyle)
+            .labels(numHorizontalLabels, numVerticalLabels, horizontalLabelsVisible)
+            .labelFormat(labelFormatter)
+            .horizontalTitle(horizontalTitle)
+            .verticalTitle(verticalTitle)
+            .colors(themeStyle)
         return this
     }
 

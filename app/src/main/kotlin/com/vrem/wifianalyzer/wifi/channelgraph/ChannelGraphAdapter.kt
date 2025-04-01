@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,15 +23,12 @@ import com.vrem.wifianalyzer.wifi.graphutils.GraphAdapter
 import com.vrem.wifianalyzer.wifi.model.WiFiData
 
 private fun channelGraphViews(): List<ChannelGraphView> =
-        WiFiBand.values().flatMap { wiFiBand ->
-            wiFiBand.wiFiChannels.wiFiChannelPairs().map { ChannelGraphView(wiFiBand, it) }
-        }
+    WiFiBand.entries.map { wiFiBand -> ChannelGraphView(wiFiBand) }
 
 @OpenClass
-class ChannelGraphAdapter(private val channelGraphNavigation: ChannelGraphNavigation) : GraphAdapter(channelGraphViews()) {
+class ChannelGraphAdapter() : GraphAdapter(channelGraphViews()) {
     override fun update(wiFiData: WiFiData) {
         super.update(wiFiData)
-        channelGraphNavigation.update()
     }
 }
 

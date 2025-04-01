@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ import android.widget.ArrayAdapter
 import android.widget.RatingBar
 import android.widget.TextView
 import androidx.annotation.ColorRes
+import androidx.core.content.ContextCompat
 import com.vrem.util.EMPTY
-import com.vrem.util.compatColor
 import com.vrem.wifianalyzer.MainContext
 import com.vrem.wifianalyzer.R
 import com.vrem.wifianalyzer.databinding.ChannelRatingDetailsBinding
@@ -39,11 +39,12 @@ import com.vrem.wifianalyzer.wifi.predicate.predicate
 import com.vrem.wifianalyzer.wifi.scanner.UpdateNotifier
 
 class ChannelRatingAdapter(
-        context: Context,
-        private val bestChannels: TextView,
-        private val channelRating: ChannelRating = ChannelRating()) :
-        ArrayAdapter<WiFiChannel>(context, R.layout.channel_rating_details, mutableListOf()),
-        UpdateNotifier {
+    context: Context,
+    private val bestChannels: TextView,
+    private val channelRating: ChannelRating = ChannelRating()
+) :
+    ArrayAdapter<WiFiChannel>(context, R.layout.channel_rating_details, mutableListOf()),
+    UpdateNotifier {
 
     private val maxChannelsToDisplay = 11
 
@@ -57,34 +58,38 @@ class ChannelRatingAdapter(
         channelRating.wiFiDetails(wiFiDetails)
         val bestChannel = bestChannels(wiFiBand, wiFiChannels)
         bestChannels.text = bestChannel.message
-        bestChannels.setTextColor(context.compatColor(bestChannel.color))
+        bestChannels.setTextColor(ContextCompat.getColor(context, bestChannel.color))
         notifyDataSetChanged()
     }
 
     private fun wiFiChannels(wiFiBand: WiFiBand, countryCode: String): List<WiFiChannel> {
-        val wiFiChannels: List<WiFiChannel> = wiFiBand.wiFiChannels.availableChannels(countryCode)
+        val wiFiChannels: List<WiFiChannel> = wiFiBand.wiFiChannels.availableChannels(wiFiBand, countryCode)
         clear()
         addAll(wiFiChannels)
         return wiFiChannels
     }
 
     override fun getView(position: Int, view: View?, parent: ViewGroup): View {
+        val mainContext = MainContext.INSTANCE
+        val wiFiBand = mainContext.settings.wiFiBand()
         val binding = view?.let { ChannelRatingAdapterBinding(it) } ?: ChannelRatingAdapterBinding(create(parent))
-        getItem(position)?.let {
-            binding.channelNumber.text = it.channel.toString()
-            binding.accessPointCount.text = channelRating.count(it).toString()
-            ratingBar(it, binding.channelRating)
+        getItem(position)?.let { wiFiChannel ->
+            val wiFiWidth = wiFiBand.wiFiChannels.wiFiWidthByChannel(wiFiChannel.channel)
+            binding.channelRatingChannel.text = wiFiChannel.channel.toString()
+            binding.channelRatingAPCount.text = channelRating.count(wiFiChannel).toString()
+            binding.channelRatingWidth.text = ContextCompat.getString(mainContext.context, wiFiWidth.textResource)
+            ratingBar(wiFiChannel, binding.channelRating)
         }
         return binding.root
     }
 
     private fun ratingBar(wiFiChannel: WiFiChannel, ratingBar: RatingBar) {
         val strength = reverse(channelRating.strength(wiFiChannel))
-        val size = Strength.values().size
+        val size = Strength.entries.size
         ratingBar.max = size
         ratingBar.numStars = size
         ratingBar.rating = strength.ordinal + 1.toFloat()
-        val color = context.compatColor(strength.colorResource)
+        val color = ContextCompat.getColor(context, strength.colorResource)
         ratingBar.progressTintList = ColorStateList.valueOf(color)
     }
 
@@ -101,15 +106,15 @@ class ChannelRatingAdapter(
 
     private fun errorMessage(wiFiBand: WiFiBand): String = with(context.resources) {
         getText(R.string.channel_rating_best_none).toString() +
-                if (WiFiBand.GHZ2 == wiFiBand) {
-                    getText(R.string.channel_rating_best_alternative).toString() +
-                            " " + getString(WiFiBand.GHZ5.textResource)
-                } else {
-                    String.EMPTY
-                }
+            if (WiFiBand.GHZ2 == wiFiBand) {
+                getText(R.string.channel_rating_best_alternative).toString() +
+                    " " + getString(WiFiBand.GHZ5.textResource)
+            } else {
+                String.EMPTY
+            }
     }
 
     private fun create(parent: ViewGroup): ChannelRatingDetailsBinding =
-            ChannelRatingDetailsBinding.inflate(MainContext.INSTANCE.layoutInflater, parent, false)
+        ChannelRatingDetailsBinding.inflate(MainContext.INSTANCE.layoutInflater, parent, false)
 
 }

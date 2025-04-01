@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +22,7 @@ import android.view.ViewGroup
 import android.widget.RatingBar
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
-import com.nhaarman.mockitokotlin2.whenever
-import com.vrem.wifianalyzer.MainContextHelper.INSTANCE
+import com.vrem.wifianalyzer.MainContextHelper
 import com.vrem.wifianalyzer.R
 import com.vrem.wifianalyzer.RobolectricUtil
 import com.vrem.wifianalyzer.wifi.band.WiFiBand
@@ -35,19 +31,22 @@ import com.vrem.wifianalyzer.wifi.model.*
 import com.vrem.wifianalyzer.wifi.model.Strength.Companion.reverse
 import com.vrem.wifianalyzer.wifi.predicate.Predicate
 import com.vrem.wifianalyzer.wifi.predicate.predicate
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
-import java.util.*
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
 class ChannelRatingAdapterTest {
     private val mainActivity = RobolectricUtil.INSTANCE.activity
-    private val settings = INSTANCE.settings
+    private val settings = MainContextHelper.INSTANCE.settings
     private val channelRating: ChannelRating = mock()
     private val bestChannels = TextView(mainActivity)
     private val fixture = ChannelRatingAdapter(mainActivity, bestChannels, channelRating)
@@ -56,48 +55,53 @@ class ChannelRatingAdapterTest {
     fun tearDown() {
         verifyNoMoreInteractions(settings)
         verifyNoMoreInteractions(channelRating)
-        INSTANCE.restore()
+        MainContextHelper.INSTANCE.restore()
     }
 
     @Test
-    fun testGetView() {
+    fun getView() {
         // setup
-        val expectedSize = Strength.values().size
+        val expectedSize = Strength.entries.size
         val expectedStrength = reverse(Strength.FOUR)
         val wiFiChannel = WiFiChannel(1, 2)
         fixture.add(wiFiChannel)
+        val wiFiBand = WiFiBand.GHZ5
+        whenever(settings.wiFiBand()).thenReturn(wiFiBand)
         whenever(channelRating.count(wiFiChannel)).thenReturn(5)
         whenever(channelRating.strength(wiFiChannel)).thenReturn(Strength.FOUR)
         val viewGroup = mainActivity.findViewById<ViewGroup>(android.R.id.content)
         // execute
         val actual = fixture.getView(0, null, viewGroup)
         // validate
-        assertNotNull(actual)
-        assertEquals("1", actual.findViewById<TextView>(R.id.channelNumber).text)
-        assertEquals("5", actual.findViewById<TextView>(R.id.accessPointCount).text)
+        assertThat(actual).isNotNull()
+        assertThat(actual.findViewById<TextView>(R.id.channelRatingChannel).text).isEqualTo("1")
+        assertThat(actual.findViewById<TextView>(R.id.channelRatingWidth).text).isEqualTo("20 MHz")
+        assertThat(actual.findViewById<TextView>(R.id.channelRatingAPCount).text).isEqualTo("5")
         val ratingBar = actual.findViewById<RatingBar>(R.id.channelRating)
-        assertEquals(expectedSize, ratingBar.max)
-        assertEquals(expectedSize, ratingBar.numStars)
-        assertEquals(expectedStrength.ordinal + 1, ratingBar.rating.toInt())
-        assertEquals("", bestChannels.text)
+        assertThat(ratingBar.max).isEqualTo(expectedSize)
+        assertThat(ratingBar.numStars).isEqualTo(expectedSize)
+        assertThat(ratingBar.rating.toInt()).isEqualTo(expectedStrength.ordinal + 1)
+        assertThat(bestChannels.text).isEqualTo("")
+        verify(settings).wiFiBand()
         verify(channelRating).count(wiFiChannel)
         verify(channelRating).strength(wiFiChannel)
     }
 
     @Test
-    fun testUpdate() {
+    fun update() {
         // setup
         val expected = mainActivity.resources.getText(R.string.channel_rating_best_none).toString()
         val wiFiData = WiFiData(listOf(), WiFiConnection.EMPTY)
-        val wiFiChannels = WiFiBand.GHZ5.wiFiChannels.availableChannels(Locale.US.country)
-        val predicate: Predicate = WiFiBand.GHZ5.predicate()
+        val wiFiBand = WiFiBand.GHZ5
+        val wiFiChannels = wiFiBand.wiFiChannels.availableChannels(wiFiBand, Locale.US.country)
+        val predicate: Predicate = wiFiBand.predicate()
         val wiFiDetails = wiFiData.wiFiDetails(predicate, SortBy.STRENGTH)
-        whenever(settings.wiFiBand()).thenReturn(WiFiBand.GHZ5)
+        whenever(settings.wiFiBand()).thenReturn(wiFiBand)
         whenever(settings.countryCode()).thenReturn(Locale.US.country)
         // execute
         fixture.update(wiFiData)
         // validate
-        assertEquals(expected, bestChannels.text)
+        assertThat(bestChannels.text).isEqualTo(expected)
         verify(channelRating).bestChannels(wiFiChannels)
         verify(channelRating).wiFiDetails(wiFiDetails)
         verify(settings).wiFiBand()
@@ -105,25 +109,25 @@ class ChannelRatingAdapterTest {
     }
 
     @Test
-    fun testBestChannelsGHZ2ErrorMessage() {
+    fun bestChannelsGHZ2ErrorMessage() {
         // setup
         val resources = mainActivity.resources
         val expected = (resources.getText(R.string.channel_rating_best_none).toString()
-                + resources.getText(R.string.channel_rating_best_alternative)
-                + " " + resources.getString(WiFiBand.GHZ5.textResource))
+            + resources.getText(R.string.channel_rating_best_alternative)
+            + " " + resources.getString(WiFiBand.GHZ5.textResource))
         val wiFiChannels: List<WiFiChannel> = listOf()
         val channelAPCounts: List<ChannelAPCount> = listOf()
         whenever(channelRating.bestChannels(wiFiChannels)).thenReturn(channelAPCounts)
         // execute
         val actual = fixture.bestChannels(WiFiBand.GHZ2, wiFiChannels)
         // validate
-        assertEquals(expected, actual.message)
-        assertEquals(R.color.error, actual.color)
+        assertThat(actual.message).isEqualTo(expected)
+        assertThat(actual.color).isEqualTo(R.color.error)
         verify(channelRating).bestChannels(wiFiChannels)
     }
 
     @Test
-    fun testBestChannelsGHZ5WithErrorMessage() {
+    fun bestChannelsGHZ5WithErrorMessage() {
         // setup
         val expected = mainActivity.resources.getText(R.string.channel_rating_best_none).toString()
         val wiFiChannels: List<WiFiChannel> = listOf()
@@ -132,13 +136,13 @@ class ChannelRatingAdapterTest {
         // execute
         val actual = fixture.bestChannels(WiFiBand.GHZ5, wiFiChannels)
         // validate
-        assertEquals(expected, actual.message)
-        assertEquals(R.color.error, actual.color)
+        assertThat(actual.message).isEqualTo(expected)
+        assertThat(actual.color).isEqualTo(R.color.error)
         verify(channelRating).bestChannels(wiFiChannels)
     }
 
     @Test
-    fun testBestChannelsGHZ5WithMaximumChannels() {
+    fun bestChannelsGHZ5WithMaximumChannels() {
         // setup
         val expected = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, ..."
         val wiFiChannels: List<WiFiChannel> = listOf()
@@ -147,13 +151,13 @@ class ChannelRatingAdapterTest {
         // execute
         val actual = fixture.bestChannels(WiFiBand.GHZ5, wiFiChannels)
         // validate
-        assertEquals(expected, actual.message)
-        assertEquals(R.color.success, actual.color)
+        assertThat(actual.message).isEqualTo(expected)
+        assertThat(actual.color).isEqualTo(R.color.success)
         verify(channelRating).bestChannels(wiFiChannels)
     }
 
     @Test
-    fun testBestChannelsGHZ5WithChannels() {
+    fun bestChannelsGHZ5WithChannels() {
         // setup
         val expected = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11"
         val wiFiChannels: List<WiFiChannel> = listOf()
@@ -162,15 +166,15 @@ class ChannelRatingAdapterTest {
         // execute
         val actual = fixture.bestChannels(WiFiBand.GHZ5, wiFiChannels)
         // validate
-        assertEquals(expected, actual.message)
-        assertEquals(R.color.success, actual.color)
+        assertThat(actual.message).isEqualTo(expected)
+        assertThat(actual.color).isEqualTo(R.color.success)
         verify(channelRating).bestChannels(wiFiChannels)
     }
 
     private fun withMaximumChannelAPCounts(): List<ChannelAPCount> =
-            (0..11).map { ChannelAPCount(WiFiChannel(it + 1, it + 100), 0) }
+        (0..11).map { ChannelAPCount(WiFiChannel(it + 1, it + 100), 0) }
 
     private fun withChannelAPCounts(): List<ChannelAPCount> =
-            (0..10).map { ChannelAPCount(WiFiChannel(it + 1, it + 100), 0) }
+        (0..10).map { ChannelAPCount(WiFiChannel(it + 1, it + 100), 0) }
 
 }

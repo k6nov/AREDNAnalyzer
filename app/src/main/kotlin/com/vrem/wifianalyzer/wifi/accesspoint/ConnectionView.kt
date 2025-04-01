@@ -1,6 +1,6 @@
 /*
  * WiFiAnalyzer
- * Copyright (C) 2015 - 2022 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
+ * Copyright (C) 2015 - 2025 VREM Software Development <VREMSoftwareDevelopment@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,7 @@ import android.net.wifi.WifiInfo
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.vrem.util.buildMinVersionM
-import com.vrem.util.buildMinVersionP
+import androidx.core.view.isEmpty
 import com.vrem.wifianalyzer.MainActivity
 import com.vrem.wifianalyzer.MainContext
 import com.vrem.wifianalyzer.R
@@ -33,15 +32,17 @@ import com.vrem.wifianalyzer.wifi.model.WiFiDetail
 import com.vrem.wifianalyzer.wifi.scanner.UpdateNotifier
 
 class ConnectionView(
-        private val mainActivity: MainActivity,
-        private val accessPointDetail: AccessPointDetail = AccessPointDetail(),
-        private val accessPointPopup: AccessPointPopup = AccessPointPopup()) : UpdateNotifier {
+    private val mainActivity: MainActivity,
+    private val accessPointDetail: AccessPointDetail = AccessPointDetail(),
+    private val accessPointPopup: AccessPointPopup = AccessPointPopup(),
+    private val warningView: WarningView = WarningView(mainActivity)
+) : UpdateNotifier {
 
     override fun update(wiFiData: WiFiData) {
-        val settings = MainContext.INSTANCE.settings
-        displayConnection(wiFiData, settings)
-        displayWiFiSupport(settings)
-        displayNoData(wiFiData)
+        val mainContext = MainContext.INSTANCE
+        displayConnection(wiFiData, mainContext.settings)
+        displayWiFiSupport(mainContext.settings)
+        warningView.update(wiFiData)
     }
 
     private fun displayWiFiSupport(settings: Settings) {
@@ -51,24 +52,6 @@ class ConnectionView(
         textView.visibility = visibility
         textView.text = mainActivity.resources.getString(wiFiBand.textResource)
     }
-
-    private fun displayNoData(wiFiData: WiFiData) {
-        val visibility = if (noData(wiFiData)) View.VISIBLE else View.GONE
-        mainActivity.findViewById<View>(R.id.scanning).visibility = visibility
-        mainActivity.findViewById<View>(R.id.no_data).visibility = visibility
-        if (buildMinVersionM()) {
-            mainActivity.findViewById<View>(R.id.no_location).visibility = getNoLocationVisibility(visibility)
-        }
-        if (buildMinVersionP()) {
-            mainActivity.findViewById<View>(R.id.throttling).visibility = visibility
-        }
-    }
-
-    private fun getNoLocationVisibility(visibility: Int): Int =
-        if (mainActivity.permissionService.enabled()) View.GONE else visibility
-
-    private fun noData(wiFiData: WiFiData): Boolean =
-        mainActivity.currentNavigationMenu().registered() && wiFiData.wiFiDetails.isEmpty()
 
     private fun displayConnection(wiFiData: WiFiData, settings: Settings) {
         val connectionViewType = settings.connectionViewType()
@@ -82,7 +65,7 @@ class ConnectionView(
             val parent = connectionView.findViewById<ViewGroup>(R.id.connectionDetail)
             val view =
                 accessPointDetail.makeView(parent.getChildAt(0), parent, connection, layout = connectionViewType.layout)
-            if (parent.childCount == 0) {
+            if (parent.isEmpty()) {
                 parent.addView(view)
             }
             setViewConnection(connectionView, wiFiConnection)
